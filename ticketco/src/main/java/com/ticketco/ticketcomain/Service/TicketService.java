@@ -4,6 +4,9 @@ import com.ticketco.ticketcomain.Client.PaymentClient;
 import com.ticketco.ticketcomain.Dto.NotificationDto;
 import com.ticketco.ticketcomain.Dto.PaymentDto;
 import com.ticketco.ticketcomain.Dto.TicketDto;
+import com.ticketco.ticketcomain.Exception.TicketcoException;
+import com.ticketco.ticketcomain.Exception.TripNotFoundException;
+import com.ticketco.ticketcomain.Exception.UserNotFoundException;
 import com.ticketco.ticketcomain.Model.Enums.Gender;
 import com.ticketco.ticketcomain.Model.Enums.NotificationType;
 import com.ticketco.ticketcomain.Model.Enums.PaymentType;
@@ -51,10 +54,10 @@ public class TicketService {
         this.paymentClient = paymentClient;
     }
 
-    public ResponseEntity<Set<TicketDto>> findMyTickets(){
+    public ResponseEntity<Set<TicketDto>> findMyTickets() throws UserNotFoundException {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        User user = userRepository.findByEmail(email);
+        User user = userRepository.findByEmail(email).orElseThrow(UserNotFoundException::new);
 
         Set<Ticket> tickets = user.getTickets();
 
@@ -63,16 +66,16 @@ public class TicketService {
         return ResponseEntity.ok().body(tickets.stream().map(ticket -> modelMapper.map(ticket, TicketDto.class)).collect(Collectors.toSet()));
     }
 
-    public ResponseEntity<List<TicketDto>> buyTickets(List<TicketDto> ticketDtos, Long tripId) {
+    public ResponseEntity<List<TicketDto>> buyTickets(List<TicketDto> ticketDtos, Long tripId) throws TicketcoException, UserNotFoundException, TripNotFoundException { // Exception Handling Örneği
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email);
-        Trip foundTrip = tripRepository.findById(tripId).orElseThrow();
+        User user = userRepository.findByEmail(email).orElseThrow(UserNotFoundException::new);
+        Trip foundTrip = tripRepository.findById(tripId).orElseThrow(TripNotFoundException::new);
 
         if(user.getUserType() == UserType.CORPORATE){
-            if(user.getTickets().stream().filter(ticket -> Objects.equals(ticket.getTrip().getId(), tripId)).count() < 20){
+            if(user.getTickets().stream().filter(ticket -> Objects.equals(ticket.getTrip().getId(), tripId)).count() + ticketDtos.size() < 20){
                 return saveTickets(ticketDtos,foundTrip,user);
             } else {
-                throw new RuntimeException("");
+                throw new TicketcoException("Kurumsal müşteriler aynı sefer için maksimum 20 bilet alabilir.");
             }
         }
 
@@ -81,10 +84,10 @@ public class TicketService {
             if(user.getTickets().stream().filter(ticket -> Objects.equals(ticket.getTrip().getId(), tripId)).count() + ticketDtos.size() <= 5 && ticketDtos.stream().filter(ticketDto -> ticketDto.getPassenger().getGender() == Gender.MALE).count() <= 2){
                 return saveTickets(ticketDtos,foundTrip,user);
             } else {
-                throw new RuntimeException("");
+                throw new TicketcoException("Bireysel müşteriler aynı sefer için maksimum 5 bilet ve aynı anda en fazla 2 adet erkek yolcu bileti alabilir.");
             }
         }
-       else throw new RuntimeException("");
+       else throw new TicketcoException("Müşteri tipi belirlenemedi");
     }
 
     public ResponseEntity<List<TicketDto>> saveTickets (List<TicketDto> ticketDtos, Trip trip, User user) {

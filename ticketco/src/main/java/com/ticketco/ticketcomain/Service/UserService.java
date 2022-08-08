@@ -3,6 +3,7 @@ package com.ticketco.ticketcomain.Service;
 import com.ticketco.ticketcomain.Dto.NotificationDto;
 import com.ticketco.ticketcomain.Dto.SingUpDto;
 import com.ticketco.ticketcomain.Dto.UserDto;
+import com.ticketco.ticketcomain.Exception.UserNotFoundException;
 import com.ticketco.ticketcomain.Model.Enums.NotificationType;
 import com.ticketco.ticketcomain.Model.User;
 import com.ticketco.ticketcomain.Repository.UserRepository;
@@ -54,23 +55,23 @@ public class UserService implements UserDetailsService {
         log.info("Tüm kullanıcılar görüntülendi.");
         return users.stream().map(user -> modelMapper.map(user, UserDto.class)).toList();    }
 
-    public UserDto getUser() {
+    public UserDto getUser() throws UserNotFoundException {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        User user = userRepository.findByEmail(email);
+        User user = userRepository.findByEmail(email).orElseThrow(UserNotFoundException::new);
         log.info("Tüm kullanıcılar görüntülendi.");
         return modelMapper.map(user,UserDto.class);
     }
 
     @Override
     public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
-        return userRepository.findByEmail(usernameOrEmail);
+        return userRepository.findByEmail(usernameOrEmail).orElseThrow();
     }
 
-    public UserDto updateUser(com.ticketco.ticketcomain.Dto.UserDto request) {
+    public UserDto updateUser(com.ticketco.ticketcomain.Dto.UserDto request) throws UserNotFoundException {
 
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User foundUser = userRepository.findByEmail(email);
+        User foundUser = userRepository.findByEmail(email).orElseThrow(UserNotFoundException::new);
 
         if (request.getFullName() != null) foundUser.setFullName(request.getFullName());
         if (request.getPassword() != null) foundUser.setPassword(bCryptPasswordEncoder.encode(request.getPassword()));

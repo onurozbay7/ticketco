@@ -2,6 +2,7 @@ package com.ticketco.ticketcomain.Controller;
 
 import com.ticketco.ticketcomain.Dto.SingUpDto;
 import com.ticketco.ticketcomain.Dto.UserDto;
+import com.ticketco.ticketcomain.Exception.UserNotFoundException;
 import com.ticketco.ticketcomain.Service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +27,7 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserDto> getUser(){
+    public ResponseEntity<UserDto> getUser() throws UserNotFoundException {
         return ResponseEntity.ok().body(userService.getUser());
     }
 
@@ -37,7 +38,7 @@ public class UserController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<UserDto> updateUser(@RequestBody UserDto request){
+    public ResponseEntity<UserDto> updateUser(@RequestBody UserDto request) throws UserNotFoundException {
         return ResponseEntity.ok().body(userService.updateUser(request));
     }
 }
