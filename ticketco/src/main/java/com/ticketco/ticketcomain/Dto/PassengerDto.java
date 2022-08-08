@@ -1,26 +1,30 @@
 package com.ticketco.ticketcomain.Dto;
 
 import com.ticketco.ticketcomain.Model.Enums.Gender;
-import com.ticketco.ticketcomain.Model.Passenger;
-import com.ticketco.ticketcomain.Model.Trip;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class TicketDto {
+public class PassengerDto {
 
     private Long id;
 
-    private PassengerDto passenger;
+    private String fullName;
 
-    private Integer amount;
+    private String email;
 
-    private TripDto trip;
+    private String phone;
 
 
+    private Gender gender;
+
+    private Integer age;
 }

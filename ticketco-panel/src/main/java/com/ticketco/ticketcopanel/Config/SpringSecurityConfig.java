@@ -36,6 +36,7 @@ public class SpringSecurityConfig {
 
         http.httpBasic().and()
                 .authorizeHttpRequests().antMatchers("/admin/register/**").permitAll()
+                .antMatchers("/trips/**").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .authenticationManager(authenticationManager)

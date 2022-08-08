@@ -59,21 +59,23 @@ public class TicketService {
 
         User user = userRepository.findByEmail(email).orElseThrow(UserNotFoundException::new);
 
-        Set<Ticket> tickets = user.getTickets();
+        Set<Ticket> tickets = ticketRepository.findAllByUser(user);
 
         log.info("Kullanıcı biletlerini görüntüledi");
 
         return ResponseEntity.ok().body(tickets.stream().map(ticket -> modelMapper.map(ticket, TicketDto.class)).collect(Collectors.toSet()));
     }
 
-    public ResponseEntity<List<TicketDto>> buyTickets(List<TicketDto> ticketDtos, Long tripId) throws TicketcoException, UserNotFoundException, TripNotFoundException { // Exception Handling Örneği
+    public ResponseEntity<List<TicketDto>> buyTickets(List<TicketDto> ticketDtos, Long tripId) throws TicketcoException, UserNotFoundException, TripNotFoundException {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByEmail(email).orElseThrow(UserNotFoundException::new);
         Trip foundTrip = tripRepository.findById(tripId).orElseThrow(TripNotFoundException::new);
 
+        Set<Ticket> myTickets = ticketRepository.findAllByUser(user);
+
         if(user.getUserType() == UserType.CORPORATE){
-            if(user.getTickets().stream().filter(ticket -> Objects.equals(ticket.getTrip().getId(), tripId)).count() + ticketDtos.size() < 20){
-                return saveTickets(ticketDtos,foundTrip,user);
+            if(myTickets.stream().filter(ticket -> Objects.equals(ticket.getTrip().getId(), tripId)).count() + ticketDtos.size() < 20){
+                return ResponseEntity.ok().body(saveTickets(ticketDtos,foundTrip,user));
             } else {
                 throw new TicketcoException("Kurumsal müşteriler aynı sefer için maksimum 20 bilet alabilir.");
             }
@@ -81,8 +83,8 @@ public class TicketService {
 
         else if(user.getUserType() == UserType.INDIVIDUAL){
 
-            if(user.getTickets().stream().filter(ticket -> Objects.equals(ticket.getTrip().getId(), tripId)).count() + ticketDtos.size() <= 5 && ticketDtos.stream().filter(ticketDto -> ticketDto.getPassenger().getGender() == Gender.MALE).count() <= 2){
-                return saveTickets(ticketDtos,foundTrip,user);
+            if(myTickets.stream().filter(ticket -> Objects.equals(ticket.getTrip().getId(), tripId)).count() + ticketDtos.size() <= 5 && ticketDtos.stream().filter(ticketDto -> ticketDto.getPassenger().getGender() == Gender.MALE).count() <= 2){
+                return ResponseEntity.ok().body(saveTickets(ticketDtos,foundTrip,user));
             } else {
                 throw new TicketcoException("Bireysel müşteriler aynı sefer için maksimum 5 bilet ve aynı anda en fazla 2 adet erkek yolcu bileti alabilir.");
             }
@@ -90,11 +92,12 @@ public class TicketService {
        else throw new TicketcoException("Müşteri tipi belirlenemedi");
     }
 
-    public ResponseEntity<List<TicketDto>> saveTickets (List<TicketDto> ticketDtos, Trip trip, User user) {
+    public List<TicketDto> saveTickets (List<TicketDto> ticketDtos, Trip trip, User user) {
         List<Ticket> tickets = ticketDtos.stream().map(ticketDto -> modelMapper.map(ticketDto, Ticket.class)).toList();
         tickets.forEach(ticket -> {
             ticket.setTrip(trip);
             ticket.setUser(user);
+
             amqpTemplate.convertAndSend(new NotificationDto(ticket.getPassenger().getPhone(),"Bilet Detayları","Bilet alma işlemi başarılı", NotificationType.SMS));
             paymentClient.createPayment(new PaymentDto(user.getEmail(), PaymentType.CREDITCARD, LocalDate.now(), trip.getPrice()));
 
@@ -104,7 +107,7 @@ public class TicketService {
 
 
 
-        return ResponseEntity.ok().body(tickets.stream().map(ticket -> modelMapper.map(ticket, TicketDto.class)).toList());
+        return tickets.stream().map(ticket -> modelMapper.map(ticket, TicketDto.class)).toList();
     }
 
 

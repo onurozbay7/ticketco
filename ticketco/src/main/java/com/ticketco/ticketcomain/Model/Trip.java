@@ -1,6 +1,7 @@
 package com.ticketco.ticketcomain.Model;
 
 
+import com.ticketco.ticketcomain.Model.Enums.VehicleStatus;
 import com.ticketco.ticketcomain.Model.Enums.VehicleType;
 import lombok.*;
 
@@ -34,11 +35,12 @@ public class Trip {
 
     private Integer capacity;
 
+    @Enumerated(value = EnumType.STRING)
+    private VehicleStatus status;
 
-    @OneToMany(mappedBy = "trip")
-    private Set<Ticket> tickets = new HashSet<>();
 
-    public Trip(Long id, String tripCode, String fromStation, String toStation, Integer price, VehicleType vehicleType, LocalDate date, Set<Ticket> tickets, Integer capacity) {
+
+    public Trip(Long id, String tripCode, String fromStation, String toStation, Integer price, VehicleType vehicleType, LocalDate date, VehicleStatus status) {
         this.id = id;
         this.tripCode = tripCode;
         this.fromStation = fromStation;
@@ -47,6 +49,7 @@ public class Trip {
         this.vehicleType = vehicleType;
         this.date = date;
         if(vehicleType == VehicleType.AIRPLANE) { this.capacity = 189;} else { this.capacity = 45;}
-        this.tickets = tickets;
+
+        this.status = status;
     }
 }

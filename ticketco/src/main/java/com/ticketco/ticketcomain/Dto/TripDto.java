@@ -17,9 +17,9 @@ public class TripDto {
 
     private String tripCode;
 
-    private String from;
+    private String fromStation;
 
-    private String to;
+    private String toStation;
 
     private Integer price;
 

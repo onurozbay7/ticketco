@@ -45,8 +45,6 @@ public class User implements UserDetails {
     @Column(length = 32)
     private UserType userType;
 
-    @OneToMany(mappedBy = "user")
-    private Set<Ticket> tickets = new HashSet<>();
 
 
     @Override

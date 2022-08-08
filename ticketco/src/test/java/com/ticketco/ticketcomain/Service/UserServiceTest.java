@@ -52,7 +52,7 @@ public class UserServiceTest {
 
 
         verify(userRepository, times(1)).findByEmail(request.getEmail());
-        verify(amqpTemplate, times(1)).convertAndSend(anyString(), anyString(), any(NotificationDto.class));
+        verify(amqpTemplate, times(1)).convertAndSend(any(NotificationDto.class));
         verify(userRepository, times(1)).save(modelMapper.map(result, User.class));
 
 
